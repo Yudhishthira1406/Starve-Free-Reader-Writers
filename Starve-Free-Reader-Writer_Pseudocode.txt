@@ -1,0 +1,55 @@
+// INTIALIZATION
+
+rd_count = Integer(0);              // Used to store the number of readers executing through the critical section
+order = Semaphore(1);               // Semaphore to store the order in which the Writers and 
+                                    // Readers request access to critical section
+get_access = Semaphore(1);          // Semaphore required to access the critical section
+rd_mutex = Semaphore(1);            // Semaphore required to change the `rd_count` variable
+
+
+
+// WRITER CODE
+do{
+<ENTRY SECTION>
+      wait(order);                  // Process waiting for its turn to get executed
+      wait(get_access);             // Requesting  access to the critical section
+      signal(order);                // Releasing `order` so that the next rwriter or reader can take the token
+                                    // and can be serviced
+<CRITICAL SECTION>
+
+<EXIT SECTION>
+      signal(get_access)            // Releasing access to critical section for next reader or writer
+
+<REMAINDER SECTION>
+
+}while(true);
+
+
+
+
+
+
+// READER CODE
+
+do{
+<ENTRY SECTION>
+       wait(order);                 // Process waiting for its turn to get executed
+       wait(rd_mutex);              // Requesting access to change `rd_count`
+       rd_count++;                  // Updating the numbers of readers trying to access critical section 
+       if(rd_count==1)              // If this is the first reader, then request access to critical section
+         wait(get_access);          // Request access to the critical section for readers
+       signal(order);               // Releasing `order` so that the next reader or writer can take the token
+                                    // and can be executed
+       signal(rd_mutex);            // Release access to the rd_count
+<CRITICAL SECTION>
+       
+<EXIT SECTION>
+       wait(rd_mutex)               // Requesting access to change rd_count         
+       rd_count--;                  // Decrease `rd_count` by 1 because a reader has finished executing critical section.
+       if(rd_count==0)              // If all the readers have finished executing their critical section
+        signal(get_access);            // Release access to critical section for the next reader or writer
+       signal(rd_mutex);            // Unlock `rd_mutex` i.e., release `rd_count` 
+       
+<REMAINDER SECTION>
+       
+}while(true);
